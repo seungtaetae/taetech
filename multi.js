@@ -12,7 +12,7 @@
 
   let token = myToken(), me = null, kicked = false, finished = false;
   let sender = null, lastStr = null, lastKey = '', dirty = false, lastUp = 0, upBusy = false, finBusy = false, finWait = 0;
-  let panelOn = false, stopWatch = null, myRank = null;
+  let panelOn = false, stopWatch = null, myRank = null, tmUsed = false;
 
   /* ---------- 게임 저장 읽기 (게임과 같은 방식) ---------- */
   function decSave(s) {
@@ -40,7 +40,9 @@
       + SIDES.reduce((a, v) => a + Object.keys((side[v] && side[v].clues) || {}).length, 0);
     const fair = S.fair && S.fair.done ? Object.keys(S.fair.done).length : 0;
     const pts = m * 1000 + Math.min(999, stations * 10 + clues * 3 + g * 5 + st * 20 + fair * 5 + (S.hasDex ? 5 : 0));
-    return { prog: { m, b, s, st, g, path, boss, ds, d }, pts };
+    const prog = { m, b, s, st, g, path, boss, ds, d };
+    if (tmUsed) prog.tm = 1;                            // 교사 모드를 쓴 적이 있으면 순위판에 표시
+    return { prog, pts };
   }
   // 여러 저장 중 가장 오래 플레이한 것 고르기 (기기마다 시계가 달라도 안전)
   function choose(list) {
@@ -65,6 +67,10 @@
   #atxRank .bt{min-height:44px;padding:4px 14px;border-radius:11px;border:1.5px solid rgba(31,42,38,.3);background:linear-gradient(#fff,#f7f2e6);color:#1f2a26;font-weight:800;font-size:16px}
   #atxRank .mine{background:#e2f3e7;border:1.5px solid #2f8f5b;border-radius:12px;padding:8px 12px;font-weight:800;color:#1f2a26}
   #atxRank .ex{font-size:13.5px;font-weight:700;color:#5a6a61}
+  #atxRank .tv{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800;font-size:14px;color:#1f2a26}
+  #atxRank .tv label{display:flex;gap:6px;align-items:center;flex:1 1 200px}
+  #atxRank .tv select{flex:1;min-height:40px;border-radius:10px;border:1.5px solid rgba(31,42,38,.4);background:#fff;color:#1f2a26;font:inherit;font-size:15px;padding:2px 8px}
+  #atxRank .tv a{min-height:40px;display:inline-flex;align-items:center;padding:4px 12px;border-radius:10px;border:1.5px solid rgba(31,42,38,.3);background:linear-gradient(#fff,#f7f2e6);color:#1f2a26;text-decoration:none}
   #atxRank .ls{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px}
   #atxRank .r{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d8cdb2;border-radius:12px;padding:7px 10px;color:#1f2a26}
   #atxRank .r.me{background:#e2f3e7;border-color:#2f8f5b}
@@ -99,11 +105,20 @@
     p.id = 'atxRank'; p.setAttribute('aria-label', '우리 반 순위'); p.setAttribute('aria-hidden', 'true');
     p.innerHTML = `<div class="hd"><div><div class="eb" id="atxRoom"></div><h2>🏆 우리 반 순위</h2></div><button class="bt" id="atxClose">닫기 ✕</button></div>
       <div class="mine" id="atxMine">불러오는 중…</div>
+      <div class="tv" id="atxTV" hidden><label>다른 반 보기 <select id="atxRoomSel" aria-label="다른 반 보기"></select></label><a href="index.html#teacher">🚪 로비로</a></div>
       <div class="ex">원정을 끝낸 대원은 먼저 끝낸 순서, 아직 원정 중인 대원은 많이 나아간 순서예요. 단계는 모두 9개(기술 시스템의 길 → 마을 배지 4개 → 지구 회의장 → 펑펑왕 → 설계 공방 → 지구 약속)예요.</div>
       <div class="ls" id="atxList"></div>
       <div class="ft"><span id="netStatus"></span> · <span id="appVersion">버전 ${esc(APP_VERSION)}</span></div>`;
     document.body.appendChild(p);
     $('#atxClose').onclick = () => togglePanel(false);
+    if (me.teacher) {                              // 선생님: 다른 반 순위로 바꾸기
+      $('#atxTV').hidden = false;
+      $('#atxRoomSel').onchange = e => {
+        const o = e.target.selectedOptions[0]; if (!o) return;
+        me.room_id = o.value; me.room_name = o.dataset.name; teacherVisit.set(me.room_id, me.room_name);
+        if (stopWatch) { stopWatch(); stopWatch = watchRoom(me.room_id, reloadRank); }
+      };
+    }
     // Esc 로 패널 닫기 (게임 메뉴보다 먼저 받음)
     window.addEventListener('keydown', e => { if (panelOn && e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); togglePanel(false); } }, true);
     // 원정 완료 화면에 '🏆 순위 보기' 버튼 넣기 + 시작 화면 이름 칸 채우기
@@ -138,8 +153,16 @@
   function togglePanel(on) {
     panelOn = on === undefined ? !panelOn : !!on;
     const p = $('#atxRank'); p.classList.toggle('on', panelOn); p.setAttribute('aria-hidden', String(!panelOn));
+    if (panelOn && me && me.teacher) fillRoomSel();
     if (panelOn && !stopWatch && me) stopWatch = watchRoom(me.room_id, reloadRank);
     if (!panelOn && stopWatch) { stopWatch(); stopWatch = null; setNet(kicked ? 'offline' : 'live'); }
+  }
+  async function fillRoomSel() {
+    try {
+      const rooms = await listAllRooms(); const sel = $('#atxRoomSel');
+      sel.innerHTML = rooms.map(r => `<option value="${r.id}" data-name="${esc(r.name)}">${esc(r.name)}</option>`).join('');
+      sel.value = me.room_id;
+    } catch (e) { }
   }
   let rLoading = false, rAgain = false;
   async function reloadRank() {
@@ -155,7 +178,8 @@
     const i = list.findIndex(p => p.id === me.player_id);
     myRank = i >= 0 ? i + 1 : null;
     const mine = list[i];
-    $('#atxMine').textContent = mine ? `나: ${myRank}등 / ${list.length}명 · ${mine.finished_at ? '원정 완료!' : stageName(mine.progress)} · ★ 별 ${(mine.progress && mine.progress.s) || 0}개`
+    if (me.teacher) { $('#atxMine').textContent = `선생님으로 보는 중 · 참가 ${list.length}명 · 완주 ${list.filter(p => p.finished_at).length}명 (선생님은 순위에 들어가지 않아요)`; }
+    else $('#atxMine').textContent = mine ? `나: ${myRank}등 / ${list.length}명 · ${mine.finished_at ? '원정 완료!' : stageName(mine.progress)} · ★ 별 ${(mine.progress && mine.progress.s) || 0}개`
       : '내 기록이 아직 없어요. 원정을 시작하면 나타나요.';
     $('#atxList').innerHTML = list.length ? list.map((p, k) => {
       const pr = p.progress || {}, isMe = p.id === me.player_id;
@@ -169,6 +193,7 @@
   function onKicked() {
     if (kicked) return;
     kicked = true; setNet('offline');
+    if (me && me.teacher) { note('선생님 비밀번호 확인이 안 돼서 원정 기록이 서버에 올라가지 않아요. <a href="index.html#teacher">로비에서 다시 들어가기</a>'); return; }
     note('이 기기의 입장 정보가 더 이상 맞지 않아요. (다른 기기에서 같은 이름으로 들어왔거나 선생님이 내보냈어요) 이 기기의 기록은 서버에 올라가지 않아요. <a href="index.html">로비로 가기</a>');
   }
   async function upload(force) {
@@ -176,10 +201,10 @@
     if (!force && Date.now() - lastUp < 30000) return;
     upBusy = true; const s = lastStr;
     try {
-      const r = await API.saveGame(token, s);
+      const r = me.teacher ? await API.teacherSave(teacherPw.get(), s) : await API.saveGame(token, s);
       if (!(r && r.skipped)) { lastUp = Date.now(); if (s === lastStr) dirty = false; if (!panelOn) setNet('live'); }
     } catch (e) {
-      if (e instanceof GameError) { if (/다시 입장/.test(e.message)) onKicked(); else { dirty = false; } }
+      if (e instanceof GameError) { if (/다시 입장|비밀번호/.test(e.message)) onKicked(); else { dirty = false; } }
       else { lastUp = Date.now() - 20000; setNet('offline'); }       // 10초 뒤 다시
     }
     upBusy = false;
@@ -205,8 +230,10 @@
     const sum = summarize(S);
     const key = JSON.stringify(sum);
     const changed = key !== lastKey;
-    if (changed) { lastKey = key; if (!kicked) sender(sum.prog, sum.pts); }
-    if (S.done && !finished) finish(sum);
+    if (!me.teacher) {                            // 선생님은 순위에 들어가지 않음
+      if (changed) { lastKey = key; if (!kicked) sender(sum.prog, sum.pts); }
+      if (S.done && !finished) finish(sum);
+    } else lastKey = key;
     upload(changed);
   }
   // 창을 닫거나 다른 앱으로 갈 때: 마지막 저장을 서버에 한 번 더 보냄 (닫히는 중에도 가도록 keepalive)
@@ -216,25 +243,47 @@
       store.set(STASH(me.player_id), s);
       if (s === lastStr && !dirty) return;
       if (s.length > 60000) return;              // keepalive 한도(64KB)를 넘으면 다음 접속 때 올림
-      fetch(SUPABASE_URL + '/rest/v1/rpc/' + PREFIX + '_save_game', {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/' + PREFIX + (me.teacher ? '_teacher_save' : '_save_game'), {
         method: 'POST', keepalive: true,
         headers: Object.assign({ 'Content-Type': 'application/json', apikey: SUPABASE_KEY },
           SUPABASE_KEY.startsWith('eyJ') ? { Authorization: 'Bearer ' + SUPABASE_KEY } : {}),
-        body: JSON.stringify({ p_token: token, p_data: s })
+        body: JSON.stringify(me.teacher ? { p_teacher_pw: teacherPw.get(), p_data: s } : { p_token: token, p_data: s })
       }).catch(() => { });
     } catch (e) { }
   }
 
+  /* ---------- 교사 모드 (게임 메뉴 → 교사 모드 켜기) ---------- */
+  // 비밀번호는 파일에 넣지 않고 Supabase 에서 확인한다 (선생님 메뉴·순위판과 같은 비밀번호).
+  window.ATX_TEACHER_CHECK = async pw => {
+    if (!pw) return { ok: false, error: '비밀번호를 써 주세요' };
+    try { await API.reorderRooms(pw, []); return { ok: true }; }   // 빈 목록이라 아무것도 바뀌지 않고 비밀번호만 확인됨
+    catch (e) { return { ok: false, error: e.message }; }
+  };
+  window.ATX_TEACHER_AUTO = async () => (me && me.teacher && teacherPw.get()) ? window.ATX_TEACHER_CHECK(teacherPw.get()) : { ok: false };
+  window.ATX_TEACHER_MODE = on => {
+    if (on && me && !me.teacher) { tmUsed = true; store.set(PREFIX + '_tm:' + me.player_id, '1'); lastKey = ''; }
+  };
+
   /* ---------- 시작 ---------- */
   async function prepare() {
-    if (!token) { location.replace('index.html'); return; }
+    const tv = teacherVisit.get();
+    if (!tv && !token) { location.replace('index.html'); return; }
     if (typeof window.ATX_START !== 'function') { showFatal('game.html 이 멀티용 파일이 아니에요. 받은 game.html 을 그대로 다시 올려 주세요.'); return; }
     setLoad('원정 기록을 불러오는 중…');
     let serverSave = null;
-    try {
+    if (tv) {                                     // 선생님: 순위에 안 들어가고, 원정 저장은 서버의 선생님 칸에 (어느 방·어느 컴퓨터에서든 이어짐)
+      me = { teacher: true, player_id: 'teacher', room_id: tv.room_id, room_name: tv.room_name, nickname: '선생님' };
+      try { const g = await API.teacherLoad(teacherPw.get()); serverSave = (g && g.data) || null; }
+      catch (e) {
+        if (e instanceof GameError) { teacherPw.clear(); teacherVisit.clear(); showFatal(e.message + ' · 로비의 선생님 메뉴에서 다시 들어가 주세요.'); setTimeout(() => location.replace('index.html#teacher'), 2500); return; }
+        setNet('offline');
+        setTimeout(() => note('서버에 연결할 수 없어 이 기기에만 저장하며 진행해요. 연결되면 자동으로 올라가요.', 9000), 1500);
+      }
+    } else try {
       const r = await API.resume(token);
       me = { player_id: r.player_id, room_id: r.room_id, nickname: r.nickname, room_name: r.room_name };
       finished = !!r.finished_at;
+      if (r.progress && r.progress.tm) tmUsed = true;
       saveMe(me);
       const g = await API.loadGame(token);
       serverSave = (g && g.data) || null;
@@ -251,12 +300,14 @@
     const pick = choose(cands.filter(Boolean));
     if (pick) store.set(SLOT, pick); else store.del(SLOT);   // 다른 학생의 저장이 남아 있으면 비움
     store.set(OWNER, me.player_id);
+    tmUsed = !me.teacher && (tmUsed || store.get(PREFIX + '_tm:' + me.player_id) === '1');
     lastStr = pick; dirty = !!pick && pick !== serverSave;
 
     mountUI();
     sender = makeProgressSender(token, e => { if (/다시 입장/.test(e.message)) onKicked(); });
     setLoad('원정을 준비하고 있어요');
     window.ATX_START();                          // 게임 시작 (원래 게임 그대로)
+    if (me.teacher) setTimeout(() => note(`👩‍🏫 선생님으로 <b>${esc(me.room_name)}</b> 방에 들어왔어요. 순위에는 들어가지 않고, 원정 기록은 어느 방에서든 이어져요. 🏆 순위에서 다른 반으로 바꿀 수 있어요.`, 7000), 600);
     document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });   // 게임이 먼저 저장한 뒤에 실행됨(등록 순서)
     window.addEventListener('pagehide', flushNow);
     tick(); setInterval(tick, 2000);

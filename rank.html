@@ -40,6 +40,7 @@
         <select id="days" class="btn small" aria-label="오래된 방 기준"><option value="30">30일</option><option value="60">60일</option><option value="90">90일</option><option value="7">7일</option></select> 지난 방
       </label>
       <button class="btn small" id="cleanBtn">오래된 방 정리</button>
+      <button class="btn small primary" id="enterBtn">▶ 이 방에 선생님으로 들어가기</button>
       <a class="btn small" href="index.html#teacher">방 만들기·고치기 (로비)</a>
       <button class="btn small ghost" id="lockBtn">🔒 잠그기</button>
     </div>
@@ -183,13 +184,15 @@ $('#cleanBtn').onclick = () => {
   });
 };
 
+$('#enterBtn').onclick = () => { const r = rooms.find(x => x.id === roomId); if (!r) return; teacherVisit.set(r.id, r.name); location.href = 'game.html'; };
+
 /* ---------- 연결 점검 ---------- */
 $('#pingBtn').onclick = async () => {
   $('#pingBtn').disabled = true; msg($('#topMsg'), '점검하는 중…', 'info');
   try {
     const r = await API.ping();
     const lag = Math.round((Date.now() - new Date(r.server_time).getTime()) / 1000);
-    if (r.schema_version !== 1) msg($('#topMsg'), `서버 SQL 버전(${r.schema_version})과 화면 파일 버전(1)이 달라요. 마지막으로 받은 SQL과 파일을 함께 다시 적용해 주세요.`);
+    if (r.schema_version !== 2) msg($('#topMsg'), `서버 SQL 버전(${r.schema_version})과 화면 파일 버전(2)이 달라요. 마지막으로 받은 SQL을 Supabase에서 다시 Run 해 주세요.`);
     else msg($('#topMsg'), `정상 ✓ 서버 연결됨 · 열린 방 ${r.open_rooms}개 · 서버 시각 ${timeText(r.server_time)}${Math.abs(lag) > 120 ? ' (이 컴퓨터 시계가 ' + Math.abs(lag) + '초 차이 나요)' : ''}`, 'ok');
   } catch (e) { msg($('#topMsg'), e.message); }
   $('#pingBtn').disabled = false;

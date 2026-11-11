@@ -67,6 +67,7 @@
       </div>
       <div id="tMsg" style="margin-top:8px"></div>
       <div class="step"><span class="no">≡</span>방 목록 <span class="hint" style="margin:0">▲▼로 학생 화면의 순서를 바꿔요</span></div>
+      <p class="hint" style="margin:-4px 0 8px">▶ 들어가기: 선생님으로 그 방에 들어가요. 선생님은 순위에 들어가지 않고, 원정 기록은 어느 방·어느 컴퓨터에서든 이어져요. 게임 안 🏆 순위에서 그 반 순위를 보고 다른 반으로 바꿀 수도 있어요.</p>
       <div class="tlist" id="tRooms"></div>
       <div class="acts" style="margin-top:14px">
         <a class="btn blue" href="rank.html" target="_blank" rel="noopener">📊 순위판 열기 (프로젝터용)</a>
@@ -123,6 +124,7 @@ async function checkResume() {
   }
 }
 $('#resumeOther').onclick = () => { forgetToken(); $('#resumeCard').hidden = true; $('#nick').focus(); };
+$('#resumeGo').addEventListener('click', () => teacherVisit.clear());
 
 /* ---------- 방 목록 ---------- */
 async function loadRooms() {
@@ -166,6 +168,7 @@ async function doJoin() {
   try {
     const r = await API.joinRoom(picked.id, pw, nick, pin);
     saveToken(r.token);
+    teacherVisit.clear();
     saveMe({ player_id: r.player_id, nickname: nick, room_id: picked.id, room_name: picked.name });
     try { localStorage.setItem(PREFIX + '_lastname', nick); } catch (e) { }
     msg($('#dlgMsg'), r.resumed ? '반가워요! 지난번 원정을 이어서 해요.' : '입장했어요! 원정을 시작해요.', 'ok');
@@ -235,6 +238,7 @@ function renderTRooms() {
     </div></div>` : `
     <div class="trow">
       <div class="nm">${esc(r.name)}<small>${r.status === 'open' ? '열림' : '닫힘'} · ${new Date(r.created_at).toLocaleDateString('ko-KR')} 만듦</small></div>
+      <button class="btn primary" data-act="enter" data-i="${i}" title="선생님으로 이 방에 들어가기">▶ 들어가기</button>
       <button class="btn" data-act="up" data-i="${i}" title="위로" aria-label="위로" ${i === 0 ? 'disabled' : ''}>▲</button>
       <button class="btn" data-act="down" data-i="${i}" title="아래로" aria-label="아래로" ${i === tRooms.length - 1 ? 'disabled' : ''}>▼</button>
       <button class="btn" data-act="edit" data-i="${i}">✏️ 고치기</button>
@@ -255,6 +259,7 @@ async function tAct(act, i) {
   const r = tRooms[i];
   if (act === 'cancel') { editing = null; renderTRooms(); return; }
   if (act === 'edit') { editing = r.id; renderTRooms(); return; }
+  if (act === 'enter') { teacherVisit.set(r.id, r.name); location.href = 'game.html'; return; }
   if (act === 'save') {
     const name = $('#eName').value.trim(), pw = $('#ePw').value;
     const ok = await tCall(t => API.updateRoom(t, r.id, name, pw), '방을 고쳤어요' + (pw ? ' (입장 비밀번호도 바뀜)' : ''));

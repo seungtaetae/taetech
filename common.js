@@ -92,6 +92,8 @@ const API = {
   resetRoom:      (tpw, roomId)            => rpc('admin_reset_room',    { p_teacher_pw: tpw, p_room: roomId }),
   setPin:         (tpw, playerId, pin)     => rpc('admin_set_pin',       { p_teacher_pw: tpw, p_player: playerId, p_pin: pin }),
   cleanup:        (tpw, days)              => rpc('cleanup',             { p_teacher_pw: tpw, p_days: days || 30 }),
+  teacherSave:    (tpw, data)              => rpc('teacher_save',        { p_teacher_pw: tpw, p_data: data }, 1),
+  teacherLoad:    (tpw)                    => rpc('teacher_load',        { p_teacher_pw: tpw }, 2),
   // 학생
   joinRoom:       (roomId, roomPw, nick, pin) => rpc('join_room',        { p_room: roomId, p_room_pw: roomPw, p_nick: nick, p_pin: pin }),
   resume:         (token)                  => rpc('resume',              { p_token: token }, 2),
@@ -216,6 +218,14 @@ const teacherPw = {
   clear: () => { try { sessionStorage.removeItem(PREFIX + '_tpw'); } catch (e) { } }
 };
 
+/* ---------- 8-1. 선생님으로 방 들어가기 (순위에 안 들어가고, 원정은 어느 방에서든 이어짐) ---------- */
+const TVISIT_KEY = PREFIX + '_tvisit';
+const teacherVisit = {
+  get: () => { try { const v = JSON.parse(sessionStorage.getItem(TVISIT_KEY) || 'null'); return v && v.room_id && teacherPw.get() ? v : null; } catch (e) { return null; } },
+  set: (roomId, roomName) => { try { sessionStorage.setItem(TVISIT_KEY, JSON.stringify({ room_id: roomId, room_name: roomName })); } catch (e) { } },
+  clear: () => { try { sessionStorage.removeItem(TVISIT_KEY); } catch (e) { } }
+};
+
 /* ---------- 9. 화면 도우미 ---------- */
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // 원정 진행 정보(progress) → 사람이 읽는 글. 숫자에는 항상 뜻을 붙인다.
@@ -223,7 +233,9 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const ATX_STEPS = 9;
 function progressText(p) {
   p = p || {};
-  return [`단계 ${p.m || 0}/${ATX_STEPS}`, `배지 ${p.b || 0}/4`, `★ 별 ${p.s || 0}개`].join(' · ');
+  const bits = [`단계 ${p.m || 0}/${ATX_STEPS}`, `배지 ${p.b || 0}/4`, `★ 별 ${p.s || 0}개`];
+  if (p.tm) bits.push('🔑 교사 모드 사용');
+  return bits.join(' · ');
 }
 function stageName(p) {
   p = p || {};
