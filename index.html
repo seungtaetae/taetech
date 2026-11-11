@@ -7,11 +7,11 @@
 <meta name="description" content="적정 기술 원정대 3D 멀티 · 우리 반 방에 들어가 함께 원정하고 순위를 확인해요">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=r4">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
-<script src="config.js"></script>
-<script src="common.js"></script>
+<script src="config.js?v=r4"></script>
+<script src="common.js?v=r4"></script>
 </head>
 <body>
 <header class="top">
@@ -259,7 +259,11 @@ async function tAct(act, i) {
   const r = tRooms[i];
   if (act === 'cancel') { editing = null; renderTRooms(); return; }
   if (act === 'edit') { editing = r.id; renderTRooms(); return; }
-  if (act === 'enter') { teacherVisit.set(r.id, r.name); location.href = 'game.html'; return; }
+  if (act === 'enter') {
+    if (typeof teacherVisit === 'undefined') { msg($('#tMsg'), '새 파일이 아직 다 내려오지 않았어요. Ctrl+F5(강력 새로고침)를 누른 뒤 다시 눌러 주세요.'); return; }
+    msg($('#tMsg'), `‘${r.name}’ 방에 선생님으로 들어가는 중…`, 'info');
+    teacherVisit.set(r.id, r.name); location.href = 'game.html'; return;
+  }
   if (act === 'save') {
     const name = $('#eName').value.trim(), pw = $('#ePw').value;
     const ok = await tCall(t => API.updateRoom(t, r.id, name, pw), '방을 고쳤어요' + (pw ? ' (입장 비밀번호도 바뀜)' : ''));

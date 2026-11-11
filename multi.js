@@ -267,7 +267,10 @@
   /* ---------- 시작 ---------- */
   async function prepare() {
     const tv = teacherVisit.get();
-    if (!tv && !token) { location.replace('index.html'); return; }
+    if (!tv && !token) {                          // 선생님 표시만 남고 비밀번호가 없으면(새 탭 등) 선생님 메뉴로
+      let hadVisit = false; try { hadVisit = !!sessionStorage.getItem(TVISIT_KEY); } catch (e) { }
+      location.replace(hadVisit ? 'index.html#teacher' : 'index.html'); return;
+    }
     if (typeof window.ATX_START !== 'function') { showFatal('game.html 이 멀티용 파일이 아니에요. 받은 game.html 을 그대로 다시 올려 주세요.'); return; }
     setLoad('원정 기록을 불러오는 중…');
     let serverSave = null;

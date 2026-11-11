@@ -7,11 +7,11 @@
 <meta name="description" content="적정 기술 원정대 3D 멀티 · 선생님 순위판 (프로젝터용)">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=r4">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
-<script src="config.js"></script>
-<script src="common.js"></script>
+<script src="config.js?v=r4"></script>
+<script src="common.js?v=r4"></script>
 </head>
 <body>
 <header class="rank-top">
@@ -184,7 +184,13 @@ $('#cleanBtn').onclick = () => {
   });
 };
 
-$('#enterBtn').onclick = () => { const r = rooms.find(x => x.id === roomId); if (!r) return; teacherVisit.set(r.id, r.name); location.href = 'game.html'; };
+$('#enterBtn').onclick = () => {
+  if (typeof teacherVisit === 'undefined') { msg($('#topMsg'), '새 파일이 아직 다 내려오지 않았어요. Ctrl+F5(강력 새로고침)를 누른 뒤 다시 눌러 주세요.'); return; }
+  const r = rooms.find(x => x.id === roomId); if (!r) { msg($('#topMsg'), '먼저 위에서 방을 골라 주세요.'); return; }
+  if (!teacherPw.get()) { msg($('#topMsg'), '🔑 선생님 도구를 먼저 열어 주세요.'); return; }
+  msg($('#topMsg'), `‘${r.name}’ 방에 선생님으로 들어가는 중…`, 'info');
+  teacherVisit.set(r.id, r.name); location.href = 'game.html';
+};
 
 /* ---------- 연결 점검 ---------- */
 $('#pingBtn').onclick = async () => {
