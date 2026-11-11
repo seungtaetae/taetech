@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>적정 기술 원정대 · 함께 원정</title>
+<meta name="description" content="적정 기술 원정대 3D 멀티 · 우리 반 방에 들어가 함께 원정하고 순위를 확인해요">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="unit">중학교 기술·가정 · 적정 기술</div>
+  <h1>적정 기술 원정대 3D</h1>
+  <div class="sub">우리 반과 함께 원정하고, 누가 먼저 모두의 섬을 도왔는지 순위를 확인해요.</div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="resumeCard" hidden>
+    <div class="resume">
+      <div class="who" id="resumeWho"></div>
+      <a class="btn primary big" href="game.html" id="resumeGo">이어서 하기 ▶</a>
+    </div>
+    <div class="acts" style="margin-top:10px">
+      <button class="btn small ghost" id="resumeOther">다른 이름으로 들어가기</button>
+    </div>
+  </section>
+
+  <section class="card" id="joinCard">
+    <div class="eyebrow">원정대 입장</div>
+    <h2>우리 반 방에 들어가요</h2>
+
+    <div class="step"><span class="no">1</span>대원 이름 쓰기</div>
+    <div class="field" id="nameField">
+      <input class="inp" id="nick" maxlength="12" autocomplete="off" placeholder="예: 12번 김하늘" aria-label="대원 이름">
+      <p class="hint">선생님이 알아볼 수 있게 번호와 이름을 써요 (12글자까지). 순위표에 이 이름이 나와요.</p>
+    </div>
+
+    <div class="step"><span class="no">2</span>우리 반 방 누르기
+      <button class="btn small ghost" id="reloadRooms" style="margin-left:auto" title="방 목록 새로고침">↻ 새로고침</button>
+    </div>
+    <div class="rooms" id="rooms"><div class="empty">방 목록을 불러오는 중…</div></div>
+    <div id="joinMsg" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card" id="teacherCard" hidden>
+    <div class="eyebrow">선생님 메뉴</div>
+    <h2>방 만들기 · 고치기</h2>
+    <div id="tLogin">
+      <div class="row">
+        <div class="field"><label for="tpw">선생님 비밀번호</label><input class="inp" id="tpw" type="password" autocomplete="off"></div>
+        <button class="btn primary" id="tLoginBtn">확인</button>
+      </div>
+      <div id="tLoginMsg" style="margin-top:8px"></div>
+    </div>
+    <div id="tPanel" hidden>
+      <div class="step" style="margin-top:6px"><span class="no">+</span>새 방 만들기</div>
+      <div class="row">
+        <div class="field"><label for="newName">방 이름 (예: 2학년 3반)</label><input class="inp" id="newName" maxlength="30" autocomplete="off"></div>
+        <div class="field"><label for="newPw">학생 입장 비밀번호 (4~20글자)</label><input class="inp" id="newPw" maxlength="20" autocomplete="off"></div>
+        <button class="btn primary" id="createBtn">방 만들기</button>
+      </div>
+      <div id="tMsg" style="margin-top:8px"></div>
+      <div class="step"><span class="no">≡</span>방 목록 <span class="hint" style="margin:0">▲▼로 학생 화면의 순서를 바꿔요</span></div>
+      <div class="tlist" id="tRooms"></div>
+      <div class="acts" style="margin-top:14px">
+        <a class="btn blue" href="rank.html" target="_blank" rel="noopener">📊 순위판 열기 (프로젝터용)</a>
+        <button class="btn ghost" id="tLogout">🔒 선생님 메뉴 닫기</button>
+      </div>
+    </div>
+  </section>
+
+  <button class="teacher-link" id="teacherLink">🔑 선생님 메뉴</button>
+</main>
+
+<div class="dlg-back" id="joinDlg" hidden>
+  <div class="card dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="eyebrow">③ 비밀번호 확인</div>
+    <h2 id="dlgTitle"></h2>
+    <div class="field"><label for="roomPw">방 비밀번호 (선생님이 알려 준 것)</label><input class="inp" id="roomPw" type="password" maxlength="20" autocomplete="off"></div>
+    <div class="field"><label for="pin">나만의 숫자 4개</label><input class="inp pin" id="pin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">
+      <p class="hint">처음이면 지금 정해요. 다음 시간에 다른 기기에서 이어 할 때 이름과 이 숫자가 필요해요. 꼭 기억해요!</p></div>
+    <div id="dlgMsg"></div>
+    <div class="acts"><button class="btn primary big" id="dlgGo">들어가기 ▶</button><button class="btn ghost" id="dlgCancel">취소</button></div>
+  </div>
+</div>
+
+<div class="dlg-back" id="askDlg" hidden>
+  <div class="card dlg" role="dialog" aria-modal="true">
+    <h2 id="askTitle"></h2>
+    <div class="fb no" id="askText"></div>
+    <div class="acts"><button class="btn red" id="askYes">지우기</button><button class="btn" id="askNo">취소</button></div>
+  </div>
+</div>
+
+<footer class="netbar"><span id="netStatus"></span> · <span id="appVersion"></span></footer>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const msg = (el, text, kind) => { el.innerHTML = text ? `<div class="fb ${kind || 'no'}">${esc(text)}</div>` : ''; };
+const shake = el => { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); };
+let rooms = [], picked = null, busy = false;
+
+/* ---------- 이어서 하기 (이 기기에 입장 기록이 있을 때) ---------- */
+async function checkResume() {
+  const t = myToken();
+  if (!t) return;
+  try {
+    const me = await API.resume(t);
+    $('#resumeWho').innerHTML = `${esc(me.nickname)} 대원<small>${esc(me.room_name)} 방 · ${me.finished_at ? '원정 완료!' : '원정 중'}</small>`;
+    $('#resumeCard').hidden = false;
+    saveMe({ player_id: me.player_id, nickname: me.nickname, room_id: me.room_id, room_name: me.room_name });
+  } catch (e) {
+    if (e instanceof GameError) { forgetToken(); return; }
+    const me = loadMe();                      // 서버가 잠시 안 되면 이 기기 기록으로 보여 줌
+    if (me) { $('#resumeWho').innerHTML = `${esc(me.nickname)} 대원<small>${esc(me.room_name || '')} 방 · 서버 연결을 기다리는 중</small>`; $('#resumeCard').hidden = false; }
+  }
+}
+$('#resumeOther').onclick = () => { forgetToken(); $('#resumeCard').hidden = true; $('#nick').focus(); };
+
+/* ---------- 방 목록 ---------- */
+async function loadRooms() {
+  try {
+    rooms = await listRooms();
+    setNet('poll');
+    renderRooms();
+  } catch (e) {
+    setNet('offline');
+    $('#rooms').innerHTML = `<div class="fb no">${esc(e.message)}</div>`;
+  }
+}
+function renderRooms() {
+  const box = $('#rooms');
+  if (!rooms.length) { box.innerHTML = '<div class="empty">아직 열린 방이 없어요. 선생님이 방을 만들 때까지 기다려요.</div>'; return; }
+  box.innerHTML = rooms.map((r, i) => `<button class="room" data-i="${i}"><b>${esc(r.name)}</b><span>눌러서 들어가기 ▶</span></button>`).join('');
+  box.querySelectorAll('.room').forEach(b => b.onclick = () => openJoin(rooms[+b.dataset.i]));
+}
+$('#reloadRooms').onclick = loadRooms;
+
+/* ---------- 입장 ---------- */
+try { $('#nick').value = localStorage.getItem(PREFIX + '_lastname') || ''; } catch (e) { }
+function openJoin(room) {
+  const nick = $('#nick').value.trim();
+  if (!nick) { msg($('#joinMsg'), '대원 이름을 먼저 써 주세요'); shake($('#nameField')); $('#nick').focus(); return; }
+  msg($('#joinMsg'), '');
+  picked = room;
+  $('#dlgTitle').textContent = `${room.name} 방 · ${nick} 대원`;
+  $('#roomPw').value = ''; $('#pin').value = ''; msg($('#dlgMsg'), '');
+  $('#joinDlg').hidden = false;
+  setTimeout(() => $('#roomPw').focus(), 50);
+}
+function closeJoin() { $('#joinDlg').hidden = true; picked = null; }
+async function doJoin() {
+  if (busy || !picked) return;
+  const nick = $('#nick').value.trim(), pw = $('#roomPw').value, pin = $('#pin').value.trim();
+  const box = $('#joinDlg .dlg');
+  if (!pw) { msg($('#dlgMsg'), '방 비밀번호를 써 주세요'); shake(box); $('#roomPw').focus(); return; }
+  if (!/^\d{4}$/.test(pin)) { msg($('#dlgMsg'), '나만의 숫자는 숫자 4개로 써 주세요 (예: 0427)'); shake(box); $('#pin').focus(); return; }
+  busy = true; $('#dlgGo').disabled = true; msg($('#dlgMsg'), '들어가는 중…', 'info');
+  try {
+    const r = await API.joinRoom(picked.id, pw, nick, pin);
+    saveToken(r.token);
+    saveMe({ player_id: r.player_id, nickname: nick, room_id: picked.id, room_name: picked.name });
+    try { localStorage.setItem(PREFIX + '_lastname', nick); } catch (e) { }
+    msg($('#dlgMsg'), r.resumed ? '반가워요! 지난번 원정을 이어서 해요.' : '입장했어요! 원정을 시작해요.', 'ok');
+    setTimeout(() => { location.href = 'game.html'; }, 600);
+  } catch (e) {
+    msg($('#dlgMsg'), e.message); shake(box);
+    busy = false; $('#dlgGo').disabled = false;
+  }
+}
+$('#dlgGo').onclick = doJoin;
+$('#dlgCancel').onclick = closeJoin;
+$('#pin').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); });
+$('#joinDlg').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doJoin(); } if (e.key === 'Escape') closeJoin(); });
+$('#joinDlg').addEventListener('click', e => { if (e.target.id === 'joinDlg') closeJoin(); });
+$('#nick').addEventListener('keydown', e => { if (e.key === 'Enter' && rooms.length === 1) openJoin(rooms[0]); });
+
+/* ---------- 확인 상자 (지우기 전에 한 번 더 묻기) ---------- */
+function askDelete(title, text) {
+  return new Promise(res => {
+    $('#askTitle').textContent = title; $('#askText').textContent = text; $('#askDlg').hidden = false;
+    const end = v => { $('#askDlg').hidden = true; res(v); };
+    $('#askYes').onclick = () => end(true); $('#askNo').onclick = () => end(false);
+    $('#askDlg').onkeydown = e => { if (e.key === 'Escape') end(false); };
+    setTimeout(() => $('#askNo').focus(), 30);
+  });
+}
+
+/* ---------- 선생님 메뉴 ---------- */
+let tRooms = [], editing = null;
+$('#teacherLink').onclick = () => {
+  $('#teacherCard').hidden = false;
+  if (teacherPw.get()) showTeacher(); else { $('#tLogin').hidden = false; $('#tPanel').hidden = true; setTimeout(() => $('#tpw').focus(), 50); }
+  $('#teacherCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+async function tLogin() {
+  const pw = $('#tpw').value;
+  if (!pw) { msg($('#tLoginMsg'), '비밀번호를 써 주세요'); return; }
+  $('#tLoginBtn').disabled = true; msg($('#tLoginMsg'), '확인하는 중…', 'info');
+  try {
+    await API.reorderRooms(pw, []);          // 빈 목록으로 불러 비밀번호만 확인 (아무것도 바뀌지 않음)
+    teacherPw.set(pw); $('#tpw').value = ''; msg($('#tLoginMsg'), '');
+    await showTeacher();
+    $('#teacherCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { msg($('#tLoginMsg'), e.message); shake($('#tLogin')); }
+  $('#tLoginBtn').disabled = false;
+}
+$('#tLoginBtn').onclick = tLogin;
+$('#tpw').addEventListener('keydown', e => { if (e.key === 'Enter') tLogin(); });
+$('#tLogout').onclick = () => { teacherPw.clear(); $('#teacherCard').hidden = true; };
+
+async function showTeacher() {
+  $('#tLogin').hidden = true; $('#tPanel').hidden = false;
+  await loadTRooms();
+}
+async function loadTRooms() {
+  try { tRooms = await listAllRooms(); renderTRooms(); }
+  catch (e) { $('#tRooms').innerHTML = `<div class="fb no">${esc(e.message)}</div>`; }
+}
+function renderTRooms() {
+  const box = $('#tRooms');
+  if (!tRooms.length) { box.innerHTML = '<div class="empty">아직 방이 없어요. 위에서 첫 방을 만들어 보세요.</div>'; return; }
+  box.innerHTML = tRooms.map((r, i) => editing === r.id ? `
+    <div class="trow"><div class="tedit">
+      <input class="inp" id="eName" maxlength="30" value="${esc(r.name)}" aria-label="방 이름">
+      <input class="inp" id="ePw" maxlength="20" placeholder="새 비밀번호 (비우면 그대로)" aria-label="새 입장 비밀번호">
+      <button class="btn primary" data-act="save" data-i="${i}">저장</button><button class="btn" data-act="cancel">취소</button>
+    </div></div>` : `
+    <div class="trow">
+      <div class="nm">${esc(r.name)}<small>${r.status === 'open' ? '열림' : '닫힘'} · ${new Date(r.created_at).toLocaleDateString('ko-KR')} 만듦</small></div>
+      <button class="btn" data-act="up" data-i="${i}" title="위로" aria-label="위로" ${i === 0 ? 'disabled' : ''}>▲</button>
+      <button class="btn" data-act="down" data-i="${i}" title="아래로" aria-label="아래로" ${i === tRooms.length - 1 ? 'disabled' : ''}>▼</button>
+      <button class="btn" data-act="edit" data-i="${i}">✏️ 고치기</button>
+      <button class="btn" data-act="del" data-i="${i}">🗑 지우기</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-act]').forEach(b => b.onclick = () => tAct(b.dataset.act, +b.dataset.i));
+  const en = $('#eName'); if (en) { en.focus(); en.addEventListener('keydown', e => { if (e.key === 'Enter') tAct('save', tRooms.findIndex(r => r.id === editing)); if (e.key === 'Escape') tAct('cancel'); }); }
+}
+async function tCall(fn, okText) {
+  try { await fn(teacherPw.get()); if (okText) msg($('#tMsg'), okText, 'ok'); await loadTRooms(); loadRooms(); return true; }
+  catch (e) {
+    msg($('#tMsg'), e.message);
+    if (e instanceof GameError && /비밀번호/.test(e.message)) { teacherPw.clear(); $('#tPanel').hidden = true; $('#tLogin').hidden = false; }
+    return false;
+  }
+}
+async function tAct(act, i) {
+  const r = tRooms[i];
+  if (act === 'cancel') { editing = null; renderTRooms(); return; }
+  if (act === 'edit') { editing = r.id; renderTRooms(); return; }
+  if (act === 'save') {
+    const name = $('#eName').value.trim(), pw = $('#ePw').value;
+    const ok = await tCall(t => API.updateRoom(t, r.id, name, pw), '방을 고쳤어요' + (pw ? ' (입장 비밀번호도 바뀜)' : ''));
+    if (ok) { editing = null; renderTRooms(); }
+    return;
+  }
+  if (act === 'del') {
+    if (!(await askDelete(`‘${r.name}’ 방을 지울까요?`, '이 방에 들어온 학생들의 순위와 게임 저장도 모두 지워지고, 되돌릴 수 없어요.'))) return;
+    await tCall(t => API.deleteRoom(t, r.id), '방을 지웠어요');
+    return;
+  }
+  if (act === 'up' || act === 'down') {
+    const j = act === 'up' ? i - 1 : i + 1;
+    const ids = tRooms.map(x => x.id); [ids[i], ids[j]] = [ids[j], ids[i]];
+    await tCall(t => API.reorderRooms(t, ids));
+  }
+}
+$('#createBtn').onclick = async () => {
+  const name = $('#newName').value.trim(), pw = $('#newPw').value;
+  if (!name) { msg($('#tMsg'), '방 이름을 써 주세요'); $('#newName').focus(); return; }
+  if (pw.length < 4) { msg($('#tMsg'), '학생 입장 비밀번호는 4글자 이상으로 써 주세요'); $('#newPw').focus(); return; }
+  $('#createBtn').disabled = true;
+  if (await tCall(t => API.createRoom(t, name, pw), `‘${name}’ 방을 만들었어요. 학생에게 비밀번호 ‘${pw}’를 알려 주세요.`)) { $('#newName').value = ''; $('#newPw').value = ''; }
+  $('#createBtn').disabled = false;
+};
+$('#newPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#createBtn').click(); });
+
+/* ---------- 시작 ---------- */
+setNet('wait');
+checkResume();
+loadRooms();
+setInterval(() => { if (!document.hidden && $('#joinDlg').hidden) loadRooms(); }, 20000);
+if (location.hash === '#teacher') $('#teacherLink').click();
+</script>
+</body>
+</html>

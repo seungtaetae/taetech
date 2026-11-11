@@ -1,0 +1,144 @@
+/* style.css — 로비(index.html)와 선생님 순위판(rank.html) 공통 디자인.
+   본게임(적정 기술 원정대 3D)의 '원정 수첩' 종이 패널과 같은 색·모양을 쓴다. */
+:root{
+  --ink:#1f2a26;--paper:#fcf8ee;--paper2:#f5eedc;--rule:#d8cdb2;--muted:#5a6a61;
+  --green:#2f8f5b;--green-soft:#e2f3e7;--blue:#2f6fb5;--blue-soft:#e5effb;
+  --orange:#e0742b;--red:#c9453f;--red-soft:#fde9e6;--gold:#f0b93a;--amber:#ffd166;--hud:#fbf6e9;
+  --edge:#b9aa83;--night:#0f1a1c;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh;color:var(--ink);
+  font-family:"Nanum Gothic","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  background:radial-gradient(ellipse 120% 70% at 30% 0%,#26443f 0,#132326 55%,var(--night) 100%) no-repeat var(--night);
+  -webkit-text-size-adjust:100%;line-height:1.5;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid #58b6ff;outline-offset:2px}
+
+/* ---------- 머리 ---------- */
+.top{max-width:980px;margin:0 auto;padding:28px 16px 10px;color:var(--hud);text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.top .unit{font-size:15px;font-weight:800;color:var(--amber);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.top h1{margin:4px 0 2px;font-size:clamp(34px,7vw,56px);line-height:1.08;letter-spacing:-1.5px;font-weight:800;color:#fff}
+.top .sub{font-size:17px;font-weight:700;color:rgba(255,255,255,.88)}
+
+/* ---------- 종이 카드 (원정 수첩) ---------- */
+.wrap{max-width:980px;margin:0 auto;padding:8px 16px 90px;display:flex;flex-direction:column;gap:16px}
+.card{position:relative;background:linear-gradient(#fdfaf1,#f8f1df);border:1px solid var(--edge);border-radius:18px;
+  box-shadow:0 18px 44px rgba(4,10,14,.45),inset 0 1px 0 #fff;padding:20px 22px 22px}
+.card:before{content:'';position:absolute;inset:6px;border:1px solid rgba(150,128,80,.34);border-radius:13px;pointer-events:none}
+.card h2{margin:0 0 4px;font-size:24px;line-height:1.3}
+.eyebrow{font-size:14px;font-weight:800;color:var(--muted)}
+.hint{font-size:15px;font-weight:700;color:var(--muted);margin:2px 0 0}
+.step{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;margin:14px 0 8px}
+.step .no{flex:none;width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:17px}
+
+/* ---------- 버튼 (본게임 .btn 과 같은 모양) ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:8px 20px;
+  border:1.5px solid rgba(31,42,38,.3);border-radius:13px;background:linear-gradient(#fff,#f7f2e6);
+  font-size:18px;font-weight:800;color:var(--ink);box-shadow:0 2px 0 rgba(31,42,38,.14),0 6px 14px rgba(31,42,38,.07);
+  transition:transform .08s,box-shadow .12s,border-color .12s;line-height:1.25;text-align:center;text-decoration:none}
+.btn:hover:not([disabled]){border-color:rgba(31,42,38,.62)}
+.btn:active:not([disabled]){transform:translateY(2px);box-shadow:none}
+.btn.primary{background:linear-gradient(#3aa76c,#2a8553);color:#fff;border-color:#1f6e43;box-shadow:0 2px 0 #1b5e3a,0 8px 18px rgba(47,143,91,.26)}
+.btn.blue{background:linear-gradient(#3b80c8,#2a65a8);color:#fff;border-color:#1f5290;box-shadow:0 2px 0 #1b477c,0 8px 18px rgba(47,111,181,.24)}
+.btn.red{background:linear-gradient(#d6564f,#bd3d37);color:#fff;border-color:#9c2f2a;box-shadow:0 2px 0 #84261f}
+.btn.gold{background:linear-gradient(#ffdf8a,#f0b93a);color:#3a2a05;border-color:#b98312;box-shadow:0 2px 0 #b98312}
+.btn.small{min-height:44px;padding:4px 14px;font-size:16px;border-radius:11px}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.big{min-height:64px;font-size:22px;padding:10px 28px;border-radius:16px}
+.btn[disabled]{opacity:.45;cursor:default}
+.acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* ---------- 입력 칸 ---------- */
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:16px;font-weight:800}
+.inp{width:100%;min-height:52px;font-size:21px;font-weight:700;border:1.5px solid rgba(31,42,38,.4);border-radius:12px;
+  padding:8px 14px;background:#fff;color:var(--ink)}
+.inp:focus{border-color:var(--green);outline:3px solid rgba(47,143,91,.25);outline-offset:0}
+.inp.pin{letter-spacing:10px;font-size:26px;max-width:220px;text-align:center}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>.field{flex:1 1 200px}
+
+/* ---------- 알림 상자 ---------- */
+.fb{border-radius:12px;padding:9px 14px;font-size:16px;line-height:1.5;font-weight:700;border:1px solid;border-left-width:6px}
+.fb.ok{background:var(--green-soft);border-color:var(--green)}
+.fb.no{background:var(--red-soft);border-color:var(--red);color:#6e1e1a}
+.fb.info{background:var(--blue-soft);border-color:var(--blue)}
+.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+
+/* ---------- 방 목록 ---------- */
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.room{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:76px;padding:12px 16px;text-align:left;
+  border:1.5px solid rgba(31,42,38,.3);border-radius:14px;background:#fff;box-shadow:0 3px 0 rgba(31,42,38,.12);font-weight:800}
+.room b{font-size:21px;line-height:1.3;word-break:keep-all}
+.room span{font-size:14px;color:var(--muted)}
+.room:hover{border-color:var(--green)}
+.room:active{transform:translateY(2px);box-shadow:none}
+.empty{padding:14px;border:1.5px dashed var(--rule);border-radius:14px;text-align:center;font-weight:700;color:var(--muted)}
+
+.resume{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--green-soft);border:1.5px solid var(--green);border-radius:14px;padding:12px 14px}
+.resume .who{flex:1 1 220px;font-weight:800;font-size:18px}
+.resume .who small{display:block;font-size:14px;color:var(--muted)}
+
+/* ---------- 선생님 메뉴 ---------- */
+.tlist{display:flex;flex-direction:column;gap:8px}
+.trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:8px 10px}
+.trow .nm{flex:1 1 160px;font-weight:800;font-size:18px;min-width:0;word-break:keep-all}
+.trow .nm small{display:block;font-size:13px;color:var(--muted)}
+.trow .btn{min-height:44px;min-width:44px;padding:4px 10px;font-size:16px}
+.tedit{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+.tedit .inp{min-height:44px;font-size:17px;flex:1 1 160px}
+.teacher-link{display:block;margin:14px auto 0;color:rgba(255,255,255,.75);font-weight:700;font-size:15px;background:none;border:0;text-decoration:underline;min-height:44px}
+
+/* ---------- 연결 상태 줄 ---------- */
+.netbar{position:fixed;left:0;right:0;bottom:0;z-index:50;text-align:center;padding:6px 10px calc(6px + env(safe-area-inset-bottom));
+  font-size:13px;font-weight:700;color:rgba(255,255,255,.8);background:rgba(8,16,20,.72)}
+#netStatus[data-state=live]{color:#8fe6a8}
+#netStatus[data-state=poll]{color:var(--amber)}
+#netStatus[data-state=offline]{color:#ff9d93}
+
+/* ---------- 대화 상자 ---------- */
+.dlg-back{position:fixed;inset:0;z-index:80;background:rgba(8,16,22,.62);display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:12px}
+
+/* ---------- 순위표 (rank.html) ---------- */
+.rank-top{max-width:1400px;margin:0 auto;padding:18px 16px 8px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;color:var(--hud)}
+.rank-top h1{margin:0;font-size:clamp(26px,4vw,42px);color:#fff;letter-spacing:-1px;line-height:1.15;flex:1 1 320px}
+.rank-top h1 small{display:block;font-size:15px;color:var(--amber);letter-spacing:0;font-weight:800}
+.rank-top select{min-height:48px;font-size:20px;font-weight:800;border-radius:12px;border:1.5px solid rgba(255,255,255,.6);background:#fdfaf1;color:var(--ink);padding:4px 12px;max-width:100%}
+.rank-wrap{max-width:1400px;margin:0 auto;padding:0 16px 90px;display:flex;flex-direction:column;gap:12px}
+.join-url{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-weight:800;font-size:16px}
+.join-url code{font-family:inherit;font-size:clamp(16px,2.2vw,24px);background:#fff;border:1px solid var(--rule);border-radius:10px;padding:2px 12px;word-break:break-all}
+.sumline{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-weight:800}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 12px;border-radius:999px;border:1px solid rgba(31,42,38,.3);background:#fff;font-size:16px}
+.ranks{display:flex;flex-direction:column;gap:8px}
+.rk{display:grid;grid-template-columns:58px minmax(120px,1.2fr) minmax(180px,2fr) minmax(200px,1fr);gap:14px;align-items:center;
+  background:#fff;border:1px solid var(--rule);border-radius:14px;padding:10px 14px;font-weight:800}
+.rk .no{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:22px;background:#efe8d6;border:2px solid #cfc4a6}
+.rk.r1 .no{background:linear-gradient(#ffe7a0,#f0b93a);border-color:#b98312}
+.rk.r2 .no{background:linear-gradient(#f3f5f7,#c4ccd3);border-color:#8f9aa4}
+.rk.r3 .no{background:linear-gradient(#f6d2b0,#d08b54);border-color:#9c5f30}
+.rk .nm{font-size:clamp(20px,2.4vw,30px);line-height:1.2;word-break:keep-all;min-width:0}
+.rk .pg{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rk .pg .txt{font-size:clamp(14px,1.5vw,18px);color:var(--muted)}
+.segs{display:flex;gap:3px}
+.segs i{flex:1;height:14px;border-radius:4px;background:#e6dfcc;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+.segs i.on{background:var(--green)}
+.rk .st{font-size:clamp(15px,1.7vw,20px);text-align:right;white-space:nowrap}
+.rk .st.done{color:var(--green)}
+.rk .tools{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;border-top:1px dashed var(--rule);padding-top:8px}
+.rk.me{background:var(--green-soft);border-color:var(--green)}
+.tag-me{display:inline-block;margin-left:6px;padding:0 9px;border-radius:999px;background:var(--green);color:#fff;font-size:14px;vertical-align:middle}
+
+@media (max-width:640px){
+  .card{padding:16px 14px 18px}
+  .rk{grid-template-columns:46px 1fr;gap:6px 10px}
+  .rk .no{width:40px;height:40px;font-size:19px}
+  .rk .pg{grid-column:2}
+  .rk .st{grid-column:2;text-align:left;white-space:normal}
+}
