@@ -33,7 +33,7 @@
     const st = SIDES.filter(v => side[v] && side[v].done).length;
     const s = MAIN.reduce((a, v) => a + ((vil[v] && vil[v].battle && vil[v].battle.stars) || 0), 0) + ((H.boss && H.boss.stars) || 0);
     const g = Math.min(6, H.met || 0);
-    const path = !!S.path, boss = !!(H.boss && H.boss.passed), ds = !!(H.design && H.design.done), d = !!S.done;
+    const path = !!S.path, boss = !!(H.boss && H.boss.passed), ds = !!(H.design && H.design.done), d = !!(S.done && S.allSeen);
     const m = (path ? 1 : 0) + b + (g >= 6 ? 1 : 0) + (boss ? 1 : 0) + (ds ? 1 : 0) + (d ? 1 : 0);
     const stations = MAIN.reduce((a, v) => a + Object.keys((vil[v] && vil[v].done) || {}).length, 0);
     const clues = MAIN.reduce((a, v) => a + Object.keys((vil[v] && vil[v].clues) || {}).length, 0)
@@ -64,6 +64,7 @@
   #atxRank .hd div{flex:1;min-width:0}
   #atxRank .eb{font-size:13px;font-weight:800;color:#5a6a61}
   #atxRank h2{margin:0;font-size:24px;line-height:1.25;color:#1f2a26}
+  #atxRank .hb{display:flex;gap:6px;flex:none}
   #atxRank .bt{min-height:44px;padding:4px 14px;border-radius:11px;border:1.5px solid rgba(31,42,38,.3);background:linear-gradient(#fff,#f7f2e6);color:#1f2a26;font-weight:800;font-size:16px}
   #atxRank .mine{background:#e2f3e7;border:1.5px solid #2f8f5b;border-radius:12px;padding:8px 12px;font-weight:800;color:#1f2a26}
   #atxRank .ex{font-size:13.5px;font-weight:700;color:#5a6a61}
@@ -103,7 +104,7 @@
     // 순위 패널
     const p = document.createElement('aside');
     p.id = 'atxRank'; p.setAttribute('aria-label', '우리 반 순위'); p.setAttribute('aria-hidden', 'true');
-    p.innerHTML = `<div class="hd"><div><div class="eb" id="atxRoom"></div><h2>🏆 우리 반 순위</h2></div><button class="bt" id="atxClose">닫기 ✕</button></div>
+    p.innerHTML = `<div class="hd"><div><div class="eb" id="atxRoom"></div><h2>🏆 우리 반 순위</h2></div><div class="hb"><button class="bt" id="atxLobby" title="방 목록으로 나가요. 원정 기록은 저장돼요">🚪 로비로</button><button class="bt" id="atxClose">닫기 ✕</button></div></div>
       <div class="mine" id="atxMine">불러오는 중…</div>
       <div class="tv" id="atxTV" hidden><label>다른 반 보기 <select id="atxRoomSel" aria-label="다른 반 보기"></select></label><a href="index.html#teacher">🚪 로비로</a></div>
       <div class="ex">원정을 끝낸 대원은 먼저 끝낸 순서, 아직 원정 중인 대원은 많이 나아간 순서예요. 단계는 모두 9개(기술 시스템의 길 → 마을 배지 4개 → 지구 회의장 → 펑펑왕 → 설계 공방 → 지구 약속)예요.</div>
@@ -111,6 +112,7 @@
       <div class="ft"><span id="netStatus"></span> · <span id="appVersion">버전 ${esc(APP_VERSION)}</span></div>`;
     document.body.appendChild(p);
     $('#atxClose').onclick = () => togglePanel(false);
+    $('#atxLobby').onclick = () => window.ATX_GOLOBBY();
     if (me.teacher) {                              // 선생님: 다른 반 순위로 바꾸기
       $('#atxTV').hidden = false;
       $('#atxRoomSel').onchange = e => {
@@ -198,7 +200,7 @@
   }
   async function upload(force) {
     if (kicked || upBusy || !dirty || !lastStr) return;
-    if (!force && Date.now() - lastUp < 30000) return;
+    if (!force && Date.now() - lastUp < 10000) return;
     upBusy = true; const s = lastStr;
     try {
       const r = me.teacher ? await API.teacherSave(teacherPw.get(), s) : await API.saveGame(token, s);
@@ -232,9 +234,9 @@
     const changed = key !== lastKey;
     if (!me.teacher) {                            // 선생님은 순위에 들어가지 않음
       if (changed) { lastKey = key; if (!kicked) sender(sum.prog, sum.pts); }
-      if (S.done && !finished) finish(sum);
+      if (S.done && S.allSeen && !finished) finish(sum);
     } else lastKey = key;
-    upload(changed);
+    upload(changed || lastUp === 0);    // 첫 접속 때는 무조건 한 번 올림 (창 빨리 닫아도 서버에 남도록)
   }
   // 창을 닫거나 다른 앱으로 갈 때: 마지막 저장을 서버에 한 번 더 보냄 (닫히는 중에도 가도록 keepalive)
   function flushNow() {
@@ -251,6 +253,13 @@
       }).catch(() => { });
     } catch (e) { }
   }
+
+  // 로비로 나가기 (게임 메뉴 · 🏆 패널): 마지막 저장을 서버에 올리고 방 목록으로 간다. 이 기기의 '이어서 하기'는 그대로 남는다.
+  window.ATX_GOLOBBY = () => {
+    if (window.ATX_LEAVING) return; window.ATX_LEAVING = 1;
+    try { if (me) { tick(); flushNow(); } } catch (e) { }
+    setTimeout(() => { location.href = (me && me.teacher) ? 'index.html#teacher' : 'index.html'; }, 250);
+  };
 
   /* ---------- 교사 모드 (게임 메뉴 → 교사 모드 켜기) ---------- */
   // 비밀번호는 파일에 넣지 않고 Supabase 에서 확인한다 (선생님 메뉴·순위판과 같은 비밀번호).
