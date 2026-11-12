@@ -7,11 +7,11 @@
 <meta name="description" content="적정 기술 원정대 3D 멀티 · 우리 반 방에 들어가 함께 원정하고 순위를 확인해요">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=r8">
+<link rel="stylesheet" href="style.css?v=r10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
-<script src="config.js?v=r9"></script>
-<script src="common.js?v=r9"></script>
+<script src="config.js?v=r10"></script>
+<script src="common.js?v=r10"></script>
 </head>
 <body>
 <header class="top">
@@ -164,6 +164,21 @@ async function doJoin() {
   const box = $('#joinDlg .dlg');
   if (!pw) { msg($('#dlgMsg'), '방 비밀번호를 써 주세요'); shake(box); $('#roomPw').focus(); return; }
   if (!/^\d{4}$/.test(pin)) { msg($('#dlgMsg'), '나만의 숫자는 숫자 4개로 써 주세요 (예: 0427)'); shake(box); $('#pin').focus(); return; }
+  // 같은 방에 띄어쓰기·번호만 다른 이름이 있으면 한 번 확인 (이름을 다르게 쓰면 새 대원이 되어 처음부터 하게 돼요)
+  if (picked._simOk !== nick) {
+    try {
+      const norm = x => String(x || '').replace(/[\s.\-_·]/g, '').toLowerCase();
+      const n0 = norm(nick), list = await listPlayers(picked.id);
+      const sim = (list || []).map(p => p.nickname).find(nm => { const n1 = norm(nm); return nm !== nick && (n1 === n0 || (n0.length >= 2 && n1.endsWith(n0)) || (n1.length >= 2 && n0.endsWith(n1))); });
+      if (sim) {
+        picked._simOk = nick;
+        $('#dlgMsg').innerHTML = `<div class="fb info">이 방에 <b>‘${esc(sim)}’</b> 대원이 이미 있어요. 지난번에 그 이름으로 원정했다면 <b>같은 이름</b>으로 들어가야 이어서 할 수 있어요.<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"><button type="button" class="btn primary small" id="useSim">‘${esc(sim)}’ 이름으로 들어가기</button><button type="button" class="btn small" id="useNew">‘${esc(nick)}’ 새 대원으로 들어가기</button></div></div>`;
+        $('#useSim').onclick = () => { $('#nick').value = sim; picked._simOk = sim; $('#dlgTitle').textContent = `${picked.name} 방 · ${sim} 대원`; doJoin(); };
+        $('#useNew').onclick = () => doJoin();
+        return;
+      }
+    } catch (e) { }
+  }
   busy = true; $('#dlgGo').disabled = true; msg($('#dlgMsg'), '들어가는 중…', 'info');
   try {
     const r = await API.joinRoom(picked.id, pw, nick, pin);
